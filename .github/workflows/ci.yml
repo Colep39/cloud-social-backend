@@ -1,0 +1,17 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build-services:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build auth
+        run: docker build -t auth:ci ./services/auth
+      - name: Build user
+        run: docker build -t user:ci ./services/user
+      - name: Build post
+        run: docker build -t post:ci ./services/post
+      - name: Build comment
+        run: docker build -t comment:ci ./services/comment
+      - name: Build notif
+        run: docker build -t notif:ci ./services/notif

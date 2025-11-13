@@ -1,0 +1,76 @@
+version: "3.9"
+services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+    ports:
+      - "8080:8080"   # Traefik dashboard
+      - "8000:80"     # Public gateway for our APIs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  postgres:
+    image: postgres:16
+    env_file: ./env/postgres.env
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  nats:
+    image: nats:2
+    ports: ["4222:4222", "8222:8222"]
+
+  auth:
+    build: ../services/auth
+    env_file: ./env/auth.env
+    depends_on: [postgres, nats]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth.rule=PathPrefix(`/auth`)
+      - traefik.http.services.auth.loadbalancer.server.port=8081
+
+  user:
+    build: ../services/user
+    env_file: ./env/user.env
+    depends_on: [postgres, nats]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.user.rule=PathPrefix(`/users`)
+      - traefik.http.services.user.loadbalancer.server.port=8082
+
+  post:
+    build: ../services/post
+    env_file: ./env/post.env
+    depends_on: [postgres, nats, redis]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.post.rule=PathPrefix(`/posts`)
+      - traefik.http.services.post.loadbalancer.server.port=8083
+
+  comment:
+    build: ../services/comment
+    env_file: ./env/comment.env
+    depends_on: [postgres, nats]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.comment.rule=PathPrefix(`/comments`)
+      - traefik.http.services.comment.loadbalancer.server.port=8084
+
+  notif:
+    build: ../services/notif
+    env_file: ./env/notif.env
+    depends_on: [postgres, nats]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.notif.rule=PathPrefix(`/notifications`)
+      - traefik.http.services.notif.loadbalancer.server.port=8085
+
+volumes:
+  pgdata:
