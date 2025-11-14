@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/colep39/cloud-social-backend/services/auth/internal/db"
   "github.com/colep39/cloud-social-backend/services/auth/internal/handlers"
-
 )
 
 func main() {
@@ -19,7 +18,9 @@ func main() {
 
 	r := gin.Default()
 
-  r.POST("/signup", handlers.Signup)
+  r.POST("/signup", handlers.Signup(pool))
+
+  r.POST("/login", handlers.Login(pool))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "auth service healthy"})
